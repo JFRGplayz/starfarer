@@ -1,0 +1,59 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starfarer Odyssey</title>
+</head>
+<body>
+
+<script>
+async function loadFile(path) {
+    const response = await fetch(path);
+    if (!response.ok) {
+        throw new Error(`Could not load ${path}: ${response.status}`);
+    }
+    return response.text();
+}
+
+async function start() {
+    try {
+        const head = await loadFile('./head.html');
+        const body = await loadFile('./body.html');
+
+        document.head.insertAdjacentHTML('beforeend', head);
+        document.body.insertAdjacentHTML('beforeend', body);
+
+        const scripts = [
+            'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js',
+            './g1.js',
+            './g2.js',
+            './g3.js'
+        ];
+
+        for (const src of scripts) {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = () => reject(
+                    new Error('Failed to load ' + src)
+                );
+                document.body.appendChild(script);
+            });
+        }
+    } catch (error) {
+        document.body.innerHTML =
+            '<pre style="color:red;padding:20px"></pre>';
+        document.querySelector('pre').textContent =
+            error.message;
+        console.error(error);
+    }
+}
+
+start();
+</script>
+
+</body>
+</html>
