@@ -1,0 +1,64 @@
+<canvas id="gl"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="planetBox" class="box"><div id="pName"></div><div id="pSub"></div><div id="pStats"></div></div>
+  <div id="objBox" class="box"><h4>OBJECTIVES</h4><ul id="objList"></ul></div>
+  <div id="compass" class="box"></div>
+  <div id="cross"><i></i><div id="scanRing"></div></div>
+  <div id="targetBox"></div>
+  <div id="prompt"></div>
+  <div id="vitals" class="box">
+    <div class="bar"><span>HEALTH</span><div class="t"><b id="bHealth" style="background:var(--bad)"></b></div><span class="v" id="vHealth"></span></div>
+    <div class="bar"><span>SHIELD</span><div class="t"><b id="bShield" style="background:var(--accent)"></b></div><span class="v" id="vShield"></span></div>
+    <div class="bar"><span>LIFE SUP</span><div class="t"><b id="bLife" style="background:var(--good)"></b></div><span class="v" id="vLife"></span></div>
+    <div class="bar"><span>JETPACK</span><div class="t"><b id="bJet" style="background:var(--warn)"></b></div><span class="v" id="vJet"></span></div>
+  </div>
+  <div id="toolBox" class="box"></div>
+  <div id="invBox" class="box"></div>
+  <div id="hint">WASD move · SHIFT sprint · SPACE jump / hold jetpack<br>LMB use tool · 1/2 switch · Q scan · R recharge suit<br>E interact · T lamp · C codex · ESC pause</div>
+  <div id="toasts"></div>
+  <div id="uw"></div>
+  <div id="fx"></div>
+</div>
+
+<div id="title" class="screen">
+  <div class="card" style="background:rgba(4,8,16,.78);max-width:min(640px,100%)">
+    <h1 class="logo">Starfarer <span>Odyssey</span></h1>
+    <div class="tag">300 worlds · one ship · no map is finished</div>
+    <div class="row-btn"><button id="bNew">New Game</button><button id="bCont" class="hidden">Continue</button></div>
+    <div class="note" style="margin:0 0 6px">Graphics quality</div>
+    <div class="row-btn" id="gfxRow"></div>
+    <div class="note" id="gfxNote"></div>
+    <div class="keys">
+      <span>Move</span><b>W A S D · Shift sprint</b>
+      <span>Jump / Jetpack</span><b>Space (hold in air)</b>
+      <span>Use tool</span><b>Left mouse (or F) · 1 beam · 2 blaster</b>
+      <span>Scan</span><b>Hold Q on a creature or deposit</b>
+      <span>Interact</span><b>E at your ship</b>
+      <span>Look</span><b>Mouse (right-drag if pointer lock is blocked) · Arrow keys</b>
+    </div>
+    <div class="note">Mine deposits, scan wildlife, fly back to your ship, sell, upgrade, then warp to the next world. Every planet is generated from its own seed.</div>
+  </div>
+</div>
+
+<div id="pause" class="screen solid hidden">
+  <div class="card" style="max-width:min(520px,100%)">
+    <h1 class="logo" style="font-size:36px">Paused</h1>
+    <div class="row-btn"><button id="bResume">Resume</button><button id="bSave">Save</button><button id="bMute">Sound: on</button></div>
+    <div class="note" style="margin:6px 0">Graphics quality</div>
+    <div class="row-btn" id="gfxRow2"></div>
+    <div class="note" id="gfxNote2"></div>
+  </div>
+</div>
+
+<div id="terminal" class="screen solid hidden">
+  <div class="card">
+    <header><h2>SHIP TERMINAL · VANGUARD</h2><div id="tabs"></div><button id="tclose">Close [E]</button></header>
+    <section id="tcontent"></section>
+  </div>
+</div>
+
+<div id="death" class="screen hidden"><div>Suit breach</div><div class="note" style="font-size:16px;letter-spacing:.1em">Recovered to ship · 20% of credits lost</div></div>
+
+<canvas id="warpCv"></canvas><div id="warpTxt"></div>
+<div id="load">GENERATING WORLD…</div>
