@@ -192,7 +192,20 @@ function damageCreature(c,dmg){
 }
 
 /* ============ PLAYER ============ */
-const keys={};let mode='title',noLock=false,mouseL=false,mouseR=false,tab='map',termMode='ship';
+const keys={};
+let mode='title',noLock=false,mouseL=false,mouseR=false,tab='map',termMode='ship';
+
+// SHIP FLIGHT
+const flight={
+  active:false,
+  speed:0,
+  verticalSpeed:0,
+  turnSpeed:1.5,
+  acceleration:12,
+  maxSpeed:35,
+  landed:true
+};
+
 function hurt(n,src,pierce){
   if(mode!=='play'||!S.alive)return;
   S.hurtT=0;S.shieldT=4;
@@ -370,17 +383,22 @@ function loadWorld(g,land){
   S.pos.set(10,P.flatH,9);S.yaw=Math.atan2(10,9);S.pitch=-.05;S.vel.set(0,0,0);S.onGround=true;
   streamChunks(1e9);
   const n=Math.round(P.maxCreatures*.6);for(let i=0;i<n;i++)trySpawn(40,150);
-  W.landT=land?0:99;W.landed=!land;
+  W.landT=99;
+  W.landed=true;
+  flight.active=false;
+  flight.speed=0;
+  flight.verticalSpeed=0;
+  flight.landed=true;
   S.planetId=g.id;S.visited.add(g.id);
   if(!land){W.ship.userData.hullG.position.y=2.4;W.ship.userData.flames.forEach(f=>f.visible=false)}
   lastObj='';
 }
 function updateShip(dt){
-  if(!W.ship)return;const hg=W.ship.userData.hullG,fl=W.ship.userData.flames;
-  if(W.landT<6){
-    W.landT+=dt;const t=clamp(W.landT/6,0,1),e=1-t,h=e*e*e*220;hg.position.y=2.4+h;
-    fl.forEach(f=>{f.visible=true;f.scale.set(1,1,1+e*7+Math.random()*.6)});
-    if(Math.random()<.5&&t>.55)burst(_t.set((Math.random()-.5)*14,W.P.flatH+.3,(Math.random()-.5)*14),3,C('#c8b8a0'),6,1.2,.5);
-    if(t>=1){W.landed=true;fl.forEach(f=>f.visible=false);toast('Touchdown — ship terminal online [E]','good');SFX.done()}
+  if(!W.ship)return;
+
+  const fl=W.ship.userData.flames;
+
+  if(!flight.active){
+    fl.forEach(f=>f.visible=false);
   }
 }
