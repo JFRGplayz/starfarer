@@ -213,7 +213,7 @@ function frame(now){
   if(!W.P)return;
   fAcc+=dt;fN++;if(fAcc>4){const fps=fN/fAcc;if(fps<22&&!fpsWarn&&mode==='play'&&gfxQ!=='low'){fpsWarn=true;toast('Low frame rate — lower Graphics quality in the pause menu','warn')}fAcc=0;fN=0}
   if(mode==='play'){
-   if(mode==='play'){
+   
 
     if(flight.active){
       updateShip(dt);
