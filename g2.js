@@ -330,7 +330,49 @@ function finishScan(a){
   }else toast(`${RES[a.obj.type].n} deposit · ${Math.ceil(a.obj.hp/a.obj.max*100)}% intact`);
 }
 function interact(){
-  if(Math.hypot(S.pos.x,S.pos.z)<14&&W.landed){openTerminal('ship')}
+  if(!W.ship)return;
+
+  if(flight.active){
+    if(!flight.landed){
+      toast('Land the ship before exiting','warn');
+      return;
+    }
+
+    const x=W.ship.position.x+Math.cos(S.yaw)*13;
+    const z=W.ship.position.z-Math.sin(S.yaw)*13;
+
+    S.pos.set(x,H(x,z)+.1,z);
+    S.vel.set(0,0,0);
+    S.onGround=true;
+
+    flight.active=false;
+    gun.visible=true;
+    toast('Exited ship','good');
+    return;
+  }
+
+  const d=Math.hypot(
+    S.pos.x-W.ship.position.x,
+    S.pos.z-W.ship.position.z
+  );
+
+  if(d<18&&W.landed){
+    flight.active=true;
+    flight.landed=true;
+    flight.speed=0;
+    flight.verticalSpeed=0;
+
+    S.yaw=W.ship.rotation.y-Math.PI;
+    W.ship.rotation.y=S.yaw+Math.PI;
+    S.pos.set(
+      W.ship.position.x,
+      W.ship.position.y+2.4,
+      W.ship.position.z
+    );
+
+    gun.visible=false;
+    toast('Ship systems online. Ready for takeoff.','good');
+  }
 }
 /* ============ SKY / LIGHT ============ */
 const sunDir=new THREE.Vector3(),tmpTop=new THREE.Color(),tmpHor=new THREE.Color(),tmpSS=new THREE.Color(),tmpC=new THREE.Color();
@@ -396,9 +438,96 @@ function loadWorld(g,land){
 function updateShip(dt){
   if(!W.ship)return;
 
-  const fl=W.ship.userData.flames;
+  const ship=W.ship;
+  const flames=ship.userData.flames;
 
   if(!flight.active){
-    fl.forEach(f=>f.visible=false);
+    flames.forEach(f=>f.visible=false);
+    return;
   }
+
+  const P=W.P;
+
+  // TURNING
+  if(keys.KeyA)S.yaw+=flight.turnSpeed*dt;
+  if(keys.KeyD)S.yaw-=flight.turnSpeed*dt;
+
+  ship.rotation.y=S.yaw+Math.PI;
+
+  // HORIZONTAL MOVEMENT
+  const throttle=
+    (keys.KeyW?1:0)-
+    (keys.KeyS?1:0);
+
+  flight.speed+=throttle*flight.acceleration*dt;
+  flight.speed=clamp(flight.speed,-12,flight.maxSpeed);
+
+  if(!throttle){
+    flight.speed*=Math.exp(-.6*dt);
+  }
+
+  const fx=-Math.sin(S.yaw);
+  const fz=-Math.cos(S.yaw);
+
+  ship.position.x+=fx*flight.speed*dt;
+  ship.position.z+=fz*flight.speed*dt;
+
+  // VERTICAL MOVEMENT
+  const vertical=
+    (keys.Space?1:0)-
+    ((keys.ControlLeft||keys.ControlRight)?1:0);
+
+  if(flight.landed){
+    const ground=H(ship.position.x,ship.position.z);
+    ship.position.y=ground;
+
+    if(keys.Space){
+      flight.landed=false;
+      W.landed=false;
+      flight.verticalSpeed=8;
+      toast('Takeoff!','good');
+    }
+  }else{
+    if(vertical){
+      flight.verticalSpeed+=vertical*18*dt;
+    }else{
+      flight.verticalSpeed*=Math.exp(-2.5*dt);
+    }
+
+    flight.verticalSpeed=clamp(
+      flight.verticalSpeed,-12,12
+    );
+
+    ship.position.y+=flight.verticalSpeed*dt;
+
+    // LANDING
+    const ground=H(ship.position.x,ship.position.z);
+
+    if(ship.position.y<=ground){
+      ship.position.y=ground;
+      flight.verticalSpeed=0;
+      flight.speed=0;
+      flight.landed=true;
+      W.landed=true;
+
+      toast('Landing complete.','good');
+      SFX.done();
+    }
+  }
+
+  // ENGINE EFFECTS
+  flames.forEach(f=>{
+    f.visible=!flight.landed;
+    if(f.visible){
+      f.scale.set(1,1,1+Math.random()*.5);
+    }
+  });
+
+  // Keep the player position synced to the ship
+  S.pos.set(
+    ship.position.x,
+    ship.position.y+2.4,
+    ship.position.z
+  );
+  S.vel.set(0,0,0);
 }
