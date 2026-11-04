@@ -24,8 +24,22 @@ function hudUpdate(){
   }
   setH('targetBox',th);
   $('scanRing').style.opacity=S.scanP>0?1:0;$('scanRing').style.setProperty('--p',Math.round(S.scanP*100));
-  const near=Math.hypot(S.pos.x,S.pos.z)<14;
-  setH('prompt',near?(W.landed?'[E] SHIP TERMINAL':'LANDING…'):'');
+  const near=W.ship&&Math.hypot(
+  S.pos.x-W.ship.position.x,
+  S.pos.z-W.ship.position.z
+)<18;
+
+let prompt='';
+
+if(flight.active){
+  prompt=flight.landed
+    ?'[E] EXIT SHIP'
+    :'FLIGHT ACTIVE · SPACE ASCEND · CTRL DESCEND';
+}else if(near&&W.landed){
+  prompt='[E] BOARD SHIP · [V] SHIP TERMINAL';
+}
+
+setH('prompt',prompt);
 }
 function resetState(){
   Object.assign(S,{health:100,alive:true,tool:1,credits:0,fuel:100,planetId:0,flags:{},scanP:0,scanKey:null,lamp:false,jet:60,life:80,shield:40});
@@ -162,8 +176,19 @@ addEventListener('keydown',e=>{
   if(e.repeat&&e.code!=='x')keys[e.code]=true;else keys[e.code]=true;
   if(mode==='play'){
     if(e.code==='Space'&&!e.repeat)S.jumpReq=true;
-    else if(e.code==='Digit1')S.tool=1;else if(e.code==='Digit2')S.tool=2;
-    else if(e.code==='KeyE'&&!e.repeat)interact();else if(e.code==='KeyT'&&!e.repeat)S.lamp=!S.lamp;else if(e.code==='KeyR'&&!e.repeat)recharge();
+    else if(e.code==='Digit1')S.tool=1;
+    else if(e.code==='Digit2')S.tool=2;
+    else if(e.code==='KeyE'&&!e.repeat)interact();
+    else if(e.code==='KeyV'&&!e.repeat){
+      if(W.landed&&W.ship&&Math.hypot(
+        S.pos.x-W.ship.position.x,
+        S.pos.z-W.ship.position.z
+      )<18){
+        openTerminal('ship');
+      }
+    }
+    else if(e.code==='KeyT'&&!e.repeat)S.lamp=!S.lamp;
+    else if(e.code==='KeyR'&&!e.repeat)recharge();
     else if(e.code==='KeyC'&&!e.repeat)openTerminal('codex');
     else if(e.code==='Escape'&&noLock)setPause(true);
   }else if(mode==='terminal'&&!e.repeat&&(e.code==='Escape'||e.code==='KeyE'||(e.code==='KeyC'&&termMode==='codex')))closeTerminal();
@@ -188,8 +213,43 @@ function frame(now){
   if(!W.P)return;
   fAcc+=dt;fN++;if(fAcc>4){const fps=fN/fAcc;if(fps<22&&!fpsWarn&&mode==='play'&&gfxQ!=='low'){fpsWarn=true;toast('Low frame rate — lower Graphics quality in the pause menu','warn')}fAcc=0;fN=0}
   if(mode==='play'){
-    if(S.alive)updatePlayer(dt);
-    camera.position.set(S.pos.x,S.pos.y+1.7+(S.onGround?Math.sin(S.bob)*.03:0),S.pos.z);camera.rotation.set(S.pitch,S.yaw,0);camera.updateMatrixWorld();
+   if(mode==='play'){
+
+    if(flight.active){
+      updateShip(dt);
+
+      const ship=W.ship;
+      const bx=Math.sin(S.yaw)*18;
+      const bz=Math.cos(S.yaw)*18;
+
+      camera.position.set(
+        ship.position.x+bx,
+        ship.position.y+8,
+        ship.position.z+bz
+      );
+
+      camera.lookAt(
+        ship.position.x,
+        ship.position.y+2.5,
+        ship.position.z
+      );
+
+      camera.updateMatrixWorld();
+
+    }else{
+      if(S.alive)updatePlayer(dt);
+
+      camera.position.set(
+        S.pos.x,
+        S.pos.y+1.7+(S.onGround?Math.sin(S.bob)*.03:0),
+        S.pos.z
+      );
+
+      camera.rotation.set(S.pitch,S.yaw,0);
+      camera.updateMatrixWorld();
+
+      updateShip(dt);
+    }
     const aim=computeAim();S.aim=aim;updateCombat(dt,aim);updateScan(dt,aim);
     updateCreatures(dt);updateShip(dt);streamChunks(2);fxUpdate(dt);updateSky(dt);lamp.intensity=S.lamp?2.4:0;hudUpdate();
     saveT+=dt;if(saveT>30){saveT=0;saveGame()}
